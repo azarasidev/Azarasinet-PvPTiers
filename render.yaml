@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: azarasi-tier
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: SNAPSHOT_SECRET
+        sync: false
