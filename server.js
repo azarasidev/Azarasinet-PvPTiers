@@ -230,99 +230,186 @@ const PAGE = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AzarasiPvP Tier List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   :root { color-scheme: dark; }
-  body { margin: 0; background: #101216; color: #e8eaf0; font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; }
-  header { padding: 28px 16px 8px; text-align: center; }
-  header h1 { margin: 0; font-size: 28px; letter-spacing: .04em; }
-  header p { color: #9aa3b2; margin: 6px 0 0; font-size: 13px; }
-  .badge { display: inline-block; background: #7a4b12; color: #ffd9a0; border-radius: 999px; padding: 2px 10px; font-size: 12px; margin-top: 8px; }
-  .tabs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 16px; }
-  .tab { display: flex; align-items: center; gap: 6px; background: #1b1e26; border: 1px solid #2c303c; color: #e8eaf0;
-         border-radius: 10px; padding: 6px 12px; cursor: pointer; font-size: 14px; }
-  .tab img { width: 22px; height: 22px; image-rendering: pixelated; }
-  .tab.active { border-color: #ffaa00; background: #262019; }
-  main { max-width: 720px; margin: 0 auto; padding: 0 16px 48px; }
-  .tier { margin-top: 22px; }
-  .tier h2 { font-size: 17px; margin: 0 0 8px; }
-  .row { display: flex; align-items: center; gap: 10px; background: #171a21; border: 1px solid #262a35;
-         border-radius: 10px; padding: 8px 12px; margin-bottom: 6px; }
-  .row img.head { width: 28px; height: 28px; border-radius: 6px; }
-  .row .name { font-weight: 600; }
-  .row .meta { margin-left: auto; color: #9aa3b2; font-size: 13px; white-space: nowrap; }
-  .row .rating { color: #ffd76a; font-weight: 700; }
-  .empty { color: #9aa3b2; text-align: center; padding: 32px 0; }
-  .tierlist { max-width: 560px; margin: 28px auto 0; padding: 0 16px; }
-  .tierlist h3 { text-align: center; font-size: 15px; color: #e8eaf0; margin: 0 0 10px; }
-  .tierrow { display: flex; justify-content: space-between; align-items: center; background: #171a21;
-             border: 1px solid #262a35; border-radius: 10px; padding: 7px 12px; margin-bottom: 6px; font-weight: 600; }
-  .tierrange { color: #9aa3b2; font-size: 13px; white-space: nowrap; }
-  footer { text-align: center; color: #5c6370; font-size: 12px; padding-bottom: 24px; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #e8eaf0; font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+         background: radial-gradient(1100px 480px at 50% -120px, #1b2450 0%, rgba(27,36,80,0) 60%), #070a16; min-height: 100vh; }
+  .px { font-family: "Press Start 2P", monospace; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 14px 40px; }
+  header { padding: 30px 8px 4px; text-align: center; }
+  header h1 { margin: 0; font-size: 19px; letter-spacing: .02em; color: #f2f5ff; text-shadow: 0 0 18px rgba(90,120,255,.45); }
+  header h1 .seal { font-family: sans-serif; }
+  header p { color: #8b96b0; margin: 10px 0 0; font-size: 12px; }
+  .badge { display: inline-block; background: #7a4b12; color: #ffd9a0; border-radius: 999px; padding: 3px 12px; font-size: 12px; margin-top: 10px; }
+  /* チャンピオン (キット内1位) */
+  .champion { text-align: center; padding: 26px 0 4px; }
+  .champ-badge { display: inline-block; font-family: "Press Start 2P", monospace; font-size: 21px; color: #ffd21f;
+                 border: 2px solid rgba(255,210,31,.75); border-radius: 12px; padding: 10px 20px 8px;
+                 box-shadow: 0 0 22px rgba(255,210,31,.28), inset 0 0 14px rgba(255,210,31,.12); background: rgba(20,18,4,.35); }
+  .champ-imgwrap { position: relative; height: 208px; display: flex; align-items: flex-end; justify-content: center; margin-top: 6px; }
+  .champ-imgwrap::before { content: ""; position: absolute; left: 50%; top: 46%; width: 340px; height: 190px; transform: translate(-50%,-50%);
+                 background: radial-gradient(closest-side, rgba(255,209,63,.34), rgba(255,209,63,.08) 55%, rgba(255,209,63,0) 72%); filter: blur(2px); }
+  .champ-imgwrap img { position: relative; height: 196px; image-rendering: pixelated; filter: drop-shadow(0 10px 22px rgba(0,0,0,.55)); }
+  .champ-name { font-family: "Press Start 2P", monospace; font-size: 19px; color: #ffffff; margin-top: 12px; word-break: break-all; text-shadow: 0 2px 14px rgba(0,0,0,.6); }
+  .champ-tier { font-size: 16px; font-weight: 700; margin-top: 8px; }
+  .champ-rating { color: #8b96b0; font-size: 12px; margin-top: 5px; }
+  /* キットタブ */
+  .tabs { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; padding: 20px 0 4px; }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 86px;
+         background: linear-gradient(180deg, #131a30, #0d1327); border: 1px solid #26304f; color: #c9d2e8;
+         border-radius: 13px; padding: 11px 10px 9px; cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: .12em; }
+  .tab img { width: 27px; height: 27px; image-rendering: pixelated; }
+  .tab.active { border-color: #ffd21f; color: #ffe98a; background: linear-gradient(180deg, #26230f, #171708); box-shadow: 0 0 14px rgba(255,210,31,.18); }
+  /* 検索・並び替え */
+  .search { margin-top: 18px; }
+  .search input { width: 100%; background: #0b1122; border: 1px solid #26304f; border-radius: 12px; color: #e8eaf0;
+                  padding: 13px 16px; font-size: 15px; outline: none; }
+  .search input:focus { border-color: #41538a; }
+  .sortrow { display: flex; gap: 9px; margin-top: 11px; }
+  .sortrow button { flex: 1; background: #0d1327; border: 1px solid #26304f; color: #aeb9d4; border-radius: 11px;
+                    padding: 11px 0; font-size: 13px; cursor: pointer; }
+  .sortrow button.active { color: #ffe98a; border-color: #ffd21f; background: #1a1807; }
+  /* プレイヤーカード */
+  .list { margin-top: 18px; }
+  .card { position: relative; overflow: hidden; background: linear-gradient(180deg, #121830, #0d1327);
+          border: 1px solid #232c47; border-radius: 15px; padding: 15px 16px 13px; margin-bottom: 12px; }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: transparent; }
+  .card.r1::before { background: linear-gradient(180deg, #ffe259, #ffa751); }
+  .card.r2::before { background: linear-gradient(180deg, #f4f6fb, #9aa7bd); }
+  .card.r3::before { background: linear-gradient(180deg, #f0a35e, #c46a2d); }
+  .card-top { display: flex; align-items: center; gap: 13px; }
+  .rank { font-family: "Press Start 2P", monospace; font-size: 17px; color: #c7cede; width: 42px; text-align: center; flex-shrink: 0; }
+  .card.r1 .rank { color: #ffd21f; } .card.r2 .rank { color: #e8edf7; } .card.r3 .rank { color: #f0a35e; }
+  .card-top img.head { width: 46px; height: 46px; border-radius: 9px; image-rendering: pixelated; background: #0b1122; flex-shrink: 0; }
+  .who { min-width: 0; }
+  .pname { font-family: "Press Start 2P", monospace; font-size: 13px; color: #f4f7ff; word-break: break-all; line-height: 1.5; }
+  .pname .arrow { color: #5b6a8c; font-size: 12px; }
+  .ptier { font-size: 13.5px; font-weight: 700; margin-top: 5px; }
+  .card-stats { display: flex; border-top: 1px solid #1e2742; margin-top: 13px; padding-top: 11px; }
+  .stat { flex: 1; text-align: center; }
+  .stat .lab { font-size: 10.5px; color: #7c87a0; letter-spacing: .08em; }
+  .stat .val { font-family: "Press Start 2P", monospace; font-size: 13px; color: #dfe6ff; margin-top: 6px; }
+  .empty { color: #8b96b0; text-align: center; padding: 34px 0; font-size: 14px; }
+  /* Tier一覧 */
+  .tierlist { max-width: 560px; margin: 30px auto 0; }
+  .tierlist h3 { text-align: center; font-size: 14px; color: #c9d2e8; letter-spacing: .15em; margin: 0 0 12px; }
+  .tierrow { display: flex; justify-content: space-between; align-items: center; background: #0d1327;
+             border: 1px solid #232c47; border-radius: 11px; padding: 8px 13px; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+  .tierrange { color: #8b96b0; font-size: 12.5px; white-space: nowrap; }
+  footer { text-align: center; color: #525c74; font-size: 11.5px; padding: 22px 0 6px; }
+  @media (max-width: 480px) {
+    .pname { font-size: 11px; }
+    .stat .val { font-size: 11px; }
+    .champ-name { font-size: 15px; }
+    header h1 { font-size: 15px; }
+  }
 </style>
 </head>
 <body>
+<div class="wrap">
 <header>
-  <h1>🦭 AzarasiPvP Tier List</h1>
+  <h1><span class="seal">🦭</span> <span class="px">AZARASI PVP</span></h1>
   <p id="updated">読み込み中…</p>
   <div id="demo"></div>
 </header>
 <nav class="tabs" id="tabs"></nav>
-<main id="content"></main>
-<section class="tierlist"><h3>Tier一覧</h3>${TIER_LIST_HTML}</section>
-<footer>AzarasiPvP — kit ごとの ELO レートから自動で Tier を付けています</footer>
+<section class="champion" id="champion"></section>
+<div class="search"><input id="q" type="search" placeholder="🔍 プレイヤーを検索…" autocomplete="off"></div>
+<div class="sortrow" id="sortrow">
+  <button data-sort="rating" class="active">レート順</button>
+  <button data-sort="wins">勝利数順</button>
+  <button data-sort="winrate">勝率順</button>
+</div>
+<main class="list" id="content"></main>
+<section class="tierlist"><h3>— TIER 一覧 —</h3>${TIER_LIST_HTML}</section>
+<footer>AzarasiPvP — キットごとのELOレートから自動でTierを付けています</footer>
+</div>
 <script>
-let DATA = null, currentKit = null;
-function esc(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+var DATA = null, currentKit = null, query = '', sortMode = 'rating';
+function esc(s) { return String(s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function winrate(p) { if (p.wins === null || p.losses === null || (p.wins + p.losses) === 0) return null; return p.wins / (p.wins + p.losses) * 100; }
 function renderTabs() {
-  const tabs = document.getElementById('tabs');
+  var tabs = document.getElementById('tabs');
   tabs.innerHTML = '';
-  for (const kit of DATA.kits) {
-    const b = document.createElement('button');
+  DATA.kits.forEach(function(kit) {
+    var b = document.createElement('button');
     b.className = 'tab' + (kit.key === currentKit ? ' active' : '');
-    b.innerHTML = '<img src="/icons/' + kit.key + '.png" alt="" onerror="this.style.display=\\'none\\'"> ' + esc(kit.label);
-    b.onclick = () => { currentKit = kit.key; renderTabs(); renderKit(); };
+    b.innerHTML = '<img src="/icons/' + kit.key + '.png" alt="" onerror="this.style.display=\\'none\\'"><span>' + esc(kit.label.toUpperCase()) + '</span>';
+    b.onclick = function() { currentKit = kit.key; renderTabs(); renderKit(); };
     tabs.appendChild(b);
-  }
+  });
+}
+function renderChampion(kit) {
+  var box = document.getElementById('champion');
+  if (!kit || kit.players.length === 0) { box.innerHTML = ''; return; }
+  var p = kit.players[0];
+  var name = encodeURIComponent(p.name);
+  box.innerHTML =
+    '<div class="champ-badge">#1</div>' +
+    '<div class="champ-imgwrap"><img src="https://mc-heads.net/body/' + name + '/140" alt="" ' +
+    'onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\\'https://mc-heads.net/avatar/' + name + '/100\\';this.style.height=\\'100px\\';}else{this.style.visibility=\\'hidden\\';}"></div>' +
+    '<div class="champ-name">' + esc(p.name) + '</div>' +
+    '<div class="champ-tier" style="color:' + p.tier.color + '">' + esc(p.tier.label) + '</div>' +
+    '<div class="champ-rating">' + esc(kit.label) + ' レート ' + p.rating + '</div>';
 }
 function renderKit() {
-  const kit = DATA.kits.find(k => k.key === currentKit);
-  const main = document.getElementById('content');
+  var kit = DATA.kits.find(function(k) { return k.key === currentKit; });
+  var main = document.getElementById('content');
+  renderChampion(kit);
   if (!kit || kit.players.length === 0) { main.innerHTML = '<div class="empty">このキットのデータはまだありません</div>'; return; }
-  const groups = new Map();
-  for (const p of kit.players) {
-    const key = p.tier.label;
-    if (!groups.has(key)) groups.set(key, { tier: p.tier, players: [] });
-    groups.get(key).players.push(p);
-  }
-  const sorted = [...groups.values()].sort((a, b) => a.tier.rank - b.tier.rank);
-  main.innerHTML = sorted.map(g =>
-    '<section class="tier"><h2 style="color:' + g.tier.color + (g.tier.bold ? ';font-weight:800' : '') + '">' + esc(g.tier.label) + '</h2>' +
-    g.players.map(p =>
-      '<div class="row"><img class="head" src="https://mc-heads.net/avatar/' + encodeURIComponent(p.name) + '/56" alt="" onerror="this.style.visibility=\\'hidden\\'">' +
-      '<span class="name">' + esc(p.name) + '</span>' +
-      '<span class="meta"><span class="rating">' + p.rating + '</span>' + (p.wins !== null && p.losses !== null ? ' · ' + p.wins + '勝 ' + p.losses + '敗' : '') + '</span></div>'
-    ).join('') + '</section>'
-  ).join('');
+  var rankOf = {};
+  kit.players.forEach(function(p, i) { rankOf[p.name.toLowerCase()] = i + 1; });
+  var players = kit.players.slice();
+  if (query) players = players.filter(function(p) { return p.name.toLowerCase().indexOf(query) !== -1; });
+  if (sortMode === 'wins') players.sort(function(a, b) { return (b.wins === null ? -1 : b.wins) - (a.wins === null ? -1 : a.wins) || b.rating - a.rating; });
+  if (sortMode === 'winrate') players.sort(function(a, b) { var x = winrate(a), y = winrate(b); return (y === null ? -1 : y) - (x === null ? -1 : x) || b.rating - a.rating; });
+  if (players.length === 0) { main.innerHTML = '<div class="empty">見つかりませんでした</div>'; return; }
+  main.innerHTML = players.map(function(p) {
+    var rank = rankOf[p.name.toLowerCase()];
+    var wr = winrate(p);
+    return '<div class="card' + (rank <= 3 ? ' r' + rank : '') + '">' +
+      '<div class="card-top"><div class="rank">' + rank + '</div>' +
+      '<img class="head" src="https://mc-heads.net/avatar/' + encodeURIComponent(p.name) + '/92" alt="" onerror="this.style.visibility=\\'hidden\\'">' +
+      '<div class="who"><div class="pname">' + esc(p.name) + ' <span class="arrow">→</span></div>' +
+      '<div class="ptier" style="color:' + p.tier.color + '">' + esc(p.tier.label) + '</div></div></div>' +
+      '<div class="card-stats">' +
+      '<div class="stat"><div class="lab">RATING</div><div class="val">' + p.rating.toLocaleString('en-US') + '</div></div>' +
+      '<div class="stat"><div class="lab">WINS</div><div class="val">' + (p.wins === null ? '—' : p.wins) + '</div></div>' +
+      '<div class="stat"><div class="lab">WIN RATE</div><div class="val">' + (wr === null ? '—' : wr.toFixed(1) + '%') + '</div></div>' +
+      '</div></div>';
+  }).join('');
 }
 function load() {
-  fetch('/api/tiers').then(r => r.json()).then(d => {
+  fetch('/api/tiers').then(function(r) { return r.json(); }).then(function(d) {
     DATA = d;
     document.getElementById('updated').textContent = d.updatedAt
       ? '最終更新: ' + new Date(d.updatedAt).toLocaleString('ja-JP')
       : 'プラグインからのデータ待ち';
     document.getElementById('demo').innerHTML = d.demo
       ? '<span class="badge">デモデータ表示中（プラグイン未接続）</span>' : '';
-    if (!currentKit || !d.kits.some(k => k.key === currentKit)) {
+    if (!currentKit || !d.kits.some(function(k) { return k.key === currentKit; })) {
       currentKit = d.kits.length ? d.kits[0].key : null;
     }
     renderTabs(); renderKit();
-  }).catch(() => { document.getElementById('updated').textContent = '読み込みに失敗しました'; });
+  }).catch(function() { document.getElementById('updated').textContent = '読み込みに失敗しました'; });
 }
+document.getElementById('q').addEventListener('input', function(e) { query = e.target.value.trim().toLowerCase(); if (DATA) renderKit(); });
+document.getElementById('sortrow').addEventListener('click', function(e) {
+  var b = e.target.closest('button'); if (!b) return;
+  sortMode = b.dataset.sort;
+  document.querySelectorAll('#sortrow button').forEach(function(x) { x.classList.toggle('active', x === b); });
+  if (DATA) renderKit();
+});
 load();
 setInterval(load, 60000);
 </script>
 </body>
-</html>`;
+</html>
+`;
 
 // ---- HTTP サーバー ----
 const server = http.createServer((req, res) => {
