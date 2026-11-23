@@ -294,6 +294,11 @@ const PAGE = `<!DOCTYPE html>
   .stat .lab { font-size: 10.5px; color: #7c87a0; letter-spacing: .08em; }
   .stat .val { font-family: "Press Start 2P", monospace; font-size: 13px; color: #dfe6ff; margin-top: 6px; }
   .empty { color: #8b96b0; text-align: center; padding: 34px 0; font-size: 14px; }
+  .pager { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+  .pager button { background: #0d1327; border: 1px solid #26304f; color: #aeb9d4; border-radius: 10px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
+  .pager button.active { color: #ffe98a; border-color: #ffd21f; background: #1a1807; }
+  .pager button:disabled { opacity: .35; cursor: default; }
+  .pager .info { color: #7c87a0; font-size: 12px; }
   /* Tier一覧 */
   .tierlist { max-width: 560px; margin: 30px auto 0; }
   .tierlist h3 { text-align: center; font-size: 14px; color: #c9d2e8; letter-spacing: .15em; margin: 0 0 12px; }
@@ -325,11 +330,13 @@ const PAGE = `<!DOCTYPE html>
   <button data-sort="winrate">勝率順</button>
 </div>
 <main class="list" id="content"></main>
+<div class="pager" id="pager"></div>
 <section class="tierlist"><h3>— TIER 一覧 —</h3>${TIER_LIST_HTML}</section>
 <footer>AzarasiPvP — キットごとのELOレートから自動でTierを付けています</footer>
 </div>
 <script>
-var DATA = null, currentKit = null, query = '', sortMode = 'rating';
+var DATA = null, currentKit = null, query = '', sortMode = 'rating', page = 1;
+var PER_PAGE = 10;
 function esc(s) { return String(s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function winrate(p) { if (p.wins === null || p.losses === null || (p.wins + p.losses) === 0) return null; return p.wins / (p.wins + p.losses) * 100; }
 function renderTabs() {
@@ -339,7 +346,7 @@ function renderTabs() {
     var b = document.createElement('button');
     b.className = 'tab' + (kit.key === currentKit ? ' active' : '');
     b.innerHTML = '<img src="/icons/' + kit.key + '.png" alt="" onerror="this.style.display=\\'none\\'"><span>' + esc(kit.label.toUpperCase()) + '</span>';
-    b.onclick = function() { currentKit = kit.key; renderTabs(); renderKit(); };
+    b.onclick = function() { currentKit = kit.key; page = 1; renderTabs(); renderKit(); };
     tabs.appendChild(b);
   });
 }
@@ -360,15 +367,19 @@ function renderKit() {
   var kit = DATA.kits.find(function(k) { return k.key === currentKit; });
   var main = document.getElementById('content');
   renderChampion(kit);
-  if (!kit || kit.players.length === 0) { main.innerHTML = '<div class="empty">このキットのデータはまだありません</div>'; return; }
+  if (!kit || kit.players.length === 0) { main.innerHTML = '<div class="empty">このキットのデータはまだありません</div>'; document.getElementById('pager').innerHTML = ''; return; }
   var rankOf = {};
   kit.players.forEach(function(p, i) { rankOf[p.name.toLowerCase()] = i + 1; });
   var players = kit.players.slice();
   if (query) players = players.filter(function(p) { return p.name.toLowerCase().indexOf(query) !== -1; });
   if (sortMode === 'wins') players.sort(function(a, b) { return (b.wins === null ? -1 : b.wins) - (a.wins === null ? -1 : a.wins) || b.rating - a.rating; });
   if (sortMode === 'winrate') players.sort(function(a, b) { var x = winrate(a), y = winrate(b); return (y === null ? -1 : y) - (x === null ? -1 : x) || b.rating - a.rating; });
-  if (players.length === 0) { main.innerHTML = '<div class="empty">見つかりませんでした</div>'; return; }
-  main.innerHTML = players.map(function(p) {
+  if (players.length === 0) { main.innerHTML = '<div class="empty">見つかりませんでした</div>'; document.getElementById('pager').innerHTML = ''; return; }
+  var totalPages = Math.max(1, Math.ceil(players.length / PER_PAGE));
+  if (page > totalPages) page = totalPages;
+  if (page < 1) page = 1;
+  var pagePlayers = players.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  main.innerHTML = pagePlayers.map(function(p) {
     var rank = rankOf[p.name.toLowerCase()];
     var wr = winrate(p);
     return '<div class="card' + (rank <= 3 ? ' r' + rank : '') + '">' +
@@ -382,7 +393,19 @@ function renderKit() {
       '<div class="stat"><div class="lab">WIN RATE</div><div class="val">' + (wr === null ? '—' : wr.toFixed(1) + '%') + '</div></div>' +
       '</div></div>';
   }).join('');
+  renderPager(players.length, totalPages);
 }
+function renderPager(total, totalPages) {
+  var box = document.getElementById('pager');
+  if (totalPages <= 1) { box.innerHTML = total ? '<span class="info">全 ' + total + ' 人</span>' : ''; return; }
+  var h = '<button ' + (page <= 1 ? 'disabled' : '') + ' onclick="goPage(' + (page - 1) + ')">← 前へ</button>';
+  for (var i = 1; i <= totalPages; i++) {
+    h += '<button class="' + (i === page ? 'active' : '') + '" onclick="goPage(' + i + ')">' + i + '</button>';
+  }
+  h += '<button ' + (page >= totalPages ? 'disabled' : '') + ' onclick="goPage(' + (page + 1) + ')">次へ →</button>';
+  box.innerHTML = h;
+}
+function goPage(n) { page = n; renderKit(); var c = document.getElementById('content'); window.scrollTo({ top: Math.max(0, c.offsetTop - 12), behavior: 'smooth' }); }
 function load() {
   fetch('/api/tiers').then(function(r) { return r.json(); }).then(function(d) {
     DATA = d;
@@ -397,10 +420,10 @@ function load() {
     renderTabs(); renderKit();
   }).catch(function() { document.getElementById('updated').textContent = '読み込みに失敗しました'; });
 }
-document.getElementById('q').addEventListener('input', function(e) { query = e.target.value.trim().toLowerCase(); if (DATA) renderKit(); });
+document.getElementById('q').addEventListener('input', function(e) { query = e.target.value.trim().toLowerCase(); page = 1; if (DATA) renderKit(); });
 document.getElementById('sortrow').addEventListener('click', function(e) {
   var b = e.target.closest('button'); if (!b) return;
-  sortMode = b.dataset.sort;
+  sortMode = b.dataset.sort; page = 1;
   document.querySelectorAll('#sortrow button').forEach(function(x) { x.classList.toggle('active', x === b); });
   if (DATA) renderKit();
 });
