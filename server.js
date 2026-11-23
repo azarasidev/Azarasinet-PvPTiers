@@ -397,7 +397,7 @@ function renderTabs() {
   });
   var fb = document.createElement('button');
   fb.className = 'tab' + (currentKit === 'ffa' ? ' active' : '');
-  fb.innerHTML = '<span>FFA</span>';
+  fb.innerHTML = '<img src="/icons/crystal.png" alt="" onerror="this.remove()"><span>FFA</span>';
   fb.onclick = function() { currentKit = 'ffa'; page = 1; renderTabs(); renderKit(); };
   tabs.appendChild(fb);
 }
