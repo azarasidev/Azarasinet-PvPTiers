@@ -6,6 +6,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const SECRET = process.env.SNAPSHOT_SECRET || '';
+const FFA_SECRET = process.env['AZARASI-PVP'] || '';
 if (!SECRET) {
   console.warn('[warn] SNAPSHOT_SECRET が未設定です。この状態ではスナップショット投稿を受け付けません。');
 }
@@ -89,9 +90,11 @@ const BOOT_ID = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 // どちらも無ければメモリのみ (従来動作)。
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const SNAPSHOT_FILE = path.join(DATA_DIR, 'snapshot.json');
+const FFA_FILE = path.join(DATA_DIR, 'ffa.json');
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || '';
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
 const UPSTASH_KEY = 'azarasi-tier-snapshot';
+const UPSTASH_FFA_KEY = 'azarasi-ffa-stats';
 
 function countPlayers(kits) {
   let n = 0;
@@ -189,6 +192,49 @@ async function restoreSnapshot() {
       }
     }
   } catch (e) { console.warn('[persist] ファイル復元に失敗: ' + e.message); }
+}
+
+let ffaData = null; // { generatedAt, players: [{name, kills, deaths}] }
+let ffaAt = null;
+
+async function persistFfa() {
+  const payload = JSON.stringify({ generatedAt: ffaData.generatedAt, players: ffaData.players, ffaAt });
+  if (UPSTASH_URL && UPSTASH_TOKEN) {
+    try { await upstash(['SET', UPSTASH_FFA_KEY, payload]); }
+    catch (e) { console.warn('[persist] FFA Upstash 保存に失敗: ' + e.message); }
+  }
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const tmp = FFA_FILE + '.tmp';
+    fs.writeFileSync(tmp, payload);
+    fs.renameSync(tmp, FFA_FILE);
+  } catch (e) { console.warn('[persist] FFA ファイル保存に失敗: ' + e.message); }
+}
+
+async function restoreFfa() {
+  if (UPSTASH_URL && UPSTASH_TOKEN) {
+    try {
+      const out = await upstash(['GET', UPSTASH_FFA_KEY]);
+      if (out && out.result) {
+        const p = JSON.parse(out.result);
+        if (p && Array.isArray(p.players)) {
+          ffaData = { generatedAt: p.generatedAt || null, players: p.players };
+          ffaAt = p.ffaAt || null;
+          console.log('[persist] FFA を Upstash から復元しました (' + p.players.length + ' players)');
+          return;
+        }
+      }
+    } catch (e) { console.warn('[persist] FFA Upstash 復元に失敗: ' + e.message); }
+  }
+  try {
+    if (fs.existsSync(FFA_FILE)) {
+      const p = JSON.parse(fs.readFileSync(FFA_FILE, 'utf8'));
+      if (p && Array.isArray(p.players)) {
+        ffaData = { generatedAt: p.generatedAt || null, players: p.players };
+        ffaAt = p.ffaAt || null;
+      }
+    }
+  } catch (e) { console.warn('[persist] FFA ファイル復元に失敗: ' + e.message); }
 }
 
 function currentData() {
@@ -349,6 +395,11 @@ function renderTabs() {
     b.onclick = function() { currentKit = kit.key; page = 1; renderTabs(); renderKit(); };
     tabs.appendChild(b);
   });
+  var fb = document.createElement('button');
+  fb.className = 'tab' + (currentKit === 'ffa' ? ' active' : '');
+  fb.innerHTML = '<span>FFA</span>';
+  fb.onclick = function() { currentKit = 'ffa'; page = 1; renderTabs(); renderKit(); };
+  tabs.appendChild(fb);
 }
 function renderChampion(kit) {
   var box = document.getElementById('champion');
@@ -366,6 +417,7 @@ function renderChampion(kit) {
 function renderKit() {
   var kit = DATA.kits.find(function(k) { return k.key === currentKit; });
   var main = document.getElementById('content');
+  if (currentKit === 'ffa') { renderFfa(main); return; }
   renderChampion(kit);
   if (!kit || kit.players.length === 0) { main.innerHTML = '<div class="empty">このキットのデータはまだありません</div>'; document.getElementById('pager').innerHTML = ''; return; }
   var rankOf = {};
@@ -395,6 +447,47 @@ function renderKit() {
   }).join('');
   renderPager(players.length, totalPages);
 }
+var FFA = { players: [] };
+function kdText(p) { if (p.kills === 0) return '0.00'; return p.deaths === 0 ? p.kills.toFixed(2) : (p.kills / p.deaths).toFixed(2); }
+function renderFfa(main) {
+  var champ = document.getElementById('champion');
+  if (!FFA.players || FFA.players.length === 0) {
+    champ.innerHTML = '';
+    main.innerHTML = '<div class="empty">FFAのデータはまだありません（プラグインからの送信待ち）</div>';
+    document.getElementById('pager').innerHTML = '';
+    return;
+  }
+  var top = FFA.players[0];
+  champ.innerHTML =
+    '<div class="champ-badge">#1</div>' +
+    '<div class="champ-imgwrap"><img src="https://mc-heads.net/body/' + encodeURIComponent(top.name) + '/140" alt="" onerror="this.remove()"></div>' +
+    '<div class="champ-name">' + esc(top.name) + '</div>' +
+    '<div class="champ-tier" style="color:#ff55ff">FFA チャンピオン</div>' +
+    '<div class="champ-rating">Crystal FFA · ' + top.kills + ' キル</div>';
+  var rankOf = {};
+  FFA.players.forEach(function(p, i) { rankOf[p.name.toLowerCase()] = i + 1; });
+  var players = FFA.players.slice();
+  if (query) players = players.filter(function(p) { return p.name.toLowerCase().indexOf(query) !== -1; });
+  if (players.length === 0) { main.innerHTML = '<div class="empty">見つかりませんでした</div>'; document.getElementById('pager').innerHTML = ''; return; }
+  var totalPages = Math.max(1, Math.ceil(players.length / PER_PAGE));
+  if (page > totalPages) page = totalPages;
+  if (page < 1) page = 1;
+  var pagePlayers = players.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  main.innerHTML = pagePlayers.map(function(p) {
+    var rank = rankOf[p.name.toLowerCase()];
+    return '<div class="card' + (rank <= 3 ? ' r' + rank : '') + '">' +
+      '<div class="card-top"><div class="rank">' + rank + '</div>' +
+      '<img class="head" src="https://mc-heads.net/avatar/' + encodeURIComponent(p.name) + '/92" alt="" onerror="this.remove()">' +
+      '<div class="who"><div class="pname">' + esc(p.name) + ' <span class="arrow">→</span></div>' +
+      '<div class="ptier" style="color:#ff55ff">Crystal FFA</div></div></div>' +
+      '<div class="card-stats">' +
+      '<div class="stat"><div class="lab">KILLS</div><div class="val">' + p.kills + '</div></div>' +
+      '<div class="stat"><div class="lab">DEATHS</div><div class="val">' + p.deaths + '</div></div>' +
+      '<div class="stat"><div class="lab">K/D</div><div class="val">' + kdText(p) + '</div></div>' +
+      '</div></div>';
+  }).join('');
+  renderPager(players.length, totalPages);
+}
 function renderPager(total, totalPages) {
   var box = document.getElementById('pager');
   if (totalPages <= 1) { box.innerHTML = total ? '<span class="info">全 ' + total + ' 人</span>' : ''; return; }
@@ -414,7 +507,7 @@ function load() {
       : 'プラグインからのデータ待ち';
     document.getElementById('demo').innerHTML = d.demo
       ? '<span class="badge">デモデータ表示中（プラグイン未接続）</span>' : '';
-    if (!currentKit || !d.kits.some(function(k) { return k.key === currentKit; })) {
+    if (!currentKit || (currentKit !== 'ffa' && !d.kits.some(function(k) { return k.key === currentKit; }))) {
       currentKit = d.kits.length ? d.kits[0].key : null;
     }
     renderTabs(); renderKit();
@@ -427,8 +520,16 @@ document.getElementById('sortrow').addEventListener('click', function(e) {
   document.querySelectorAll('#sortrow button').forEach(function(x) { x.classList.toggle('active', x === b); });
   if (DATA) renderKit();
 });
+function loadFfa() {
+  fetch('/api/ffa').then(function(r) { return r.json(); }).then(function(d) {
+    FFA = (d && Array.isArray(d.players)) ? d : { players: [] };
+    if (DATA) { renderTabs(); if (currentKit === 'ffa') renderKit(); }
+  }).catch(function() {});
+}
 load();
+loadFfa();
 setInterval(load, 60000);
+setInterval(loadFfa, 60000);
 </script>
 </body>
 </html>
@@ -441,7 +542,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/status') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({
-      ok: true, hasData: snapshot !== null, bootId: BOOT_ID, updatedAt: snapshotAt,
+      ok: true, hasData: snapshot !== null, bootId: BOOT_ID, updatedAt: snapshotAt, ffaPlayers: ffaData ? ffaData.players.length : 0,
     }));
   }
 
@@ -480,6 +581,50 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === 'POST' && url.pathname === '/api/ffa') {
+    const auth = req.headers.authorization || '';
+    const okAuth = (SECRET && auth === 'Bearer ' + SECRET) || (FFA_SECRET && auth === 'Bearer ' + FFA_SECRET);
+    if (!okAuth) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'unauthorized' }));
+    }
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 1024 * 1024) req.destroy();
+    });
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body);
+        if (!parsed || !Array.isArray(parsed.players)) throw new Error('bad shape');
+        const players = parsed.players.slice(0, 1000).map((p) => ({
+          name: String((p && p.name) || '').slice(0, 32),
+          kills: Math.max(0, Math.floor(Number(p && p.kills) || 0)),
+          deaths: Math.max(0, Math.floor(Number(p && p.deaths) || 0)),
+        })).filter((p) => p.name.length > 0);
+        players.sort((a, b) => b.kills - a.kills || a.deaths - b.deaths);
+        ffaData = { generatedAt: parsed.generatedAt || null, players };
+        ffaAt = new Date().toISOString();
+        persistFfa().catch(() => {});
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, players: players.length }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'invalid json' }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/ffa') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    return res.end(JSON.stringify({
+      updatedAt: ffaAt,
+      generatedAt: ffaData ? ffaData.generatedAt : null,
+      players: ffaData ? ffaData.players : [],
+    }));
+  }
+
   if (req.method === 'GET' && url.pathname === '/api/tiers') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     return res.end(JSON.stringify(buildTiers()));
@@ -509,6 +654,6 @@ const server = http.createServer((req, res) => {
   res.end('not found');
 });
 
-restoreSnapshot().finally(() => {
+Promise.all([restoreSnapshot(), restoreFfa()]).finally(() => {
   server.listen(PORT, () => console.log('azarasi-tier-web listening on ' + PORT));
 });
