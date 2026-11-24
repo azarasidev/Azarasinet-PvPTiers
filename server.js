@@ -320,20 +320,30 @@ const PAGE = `<!DOCTYPE html>
          background: linear-gradient(180deg, #131a30, #0d1327); border: 1px solid #26304f; color: #c9d2e8;
          border-radius: 13px; padding: 11px 10px 9px; cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: .12em; }
   .tab img { width: 27px; height: 27px; image-rendering: pixelated; }
+  .tab { transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease; }
+  .tab:hover { transform: translateY(-2px); border-color: #41538a; }
+  .tab:active { transform: scale(.95); }
   .tab.active { border-color: #ffd21f; color: #ffe98a; background: linear-gradient(180deg, #26230f, #171708); box-shadow: 0 0 14px rgba(255,210,31,.18); }
   /* 検索・並び替え */
   .search { margin-top: 18px; }
   .search input { width: 100%; background: #0b1122; border: 1px solid #26304f; border-radius: 12px; color: #e8eaf0;
                   padding: 13px 16px; font-size: 15px; outline: none; }
-  .search input:focus { border-color: #41538a; }
+  .search input { transition: border-color .18s ease, box-shadow .18s ease; }
+  .search input:focus { border-color: #41538a; box-shadow: 0 0 0 3px rgba(90,120,255,.15); }
   .sortrow { display: flex; gap: 9px; margin-top: 11px; }
   .sortrow button { flex: 1; background: #0d1327; border: 1px solid #26304f; color: #aeb9d4; border-radius: 11px;
                     padding: 11px 0; font-size: 13px; cursor: pointer; }
   .sortrow button.active { color: #ffe98a; border-color: #ffd21f; background: #1a1807; }
+  .sortrow button { transition: transform .14s ease, border-color .14s ease, color .14s ease, background .14s ease; }
+  .sortrow button:hover { transform: translateY(-1px); border-color: #41538a; }
+  .sortrow button:active { transform: scale(.97); }
   /* プレイヤーカード */
   .list { margin-top: 18px; }
   .card { position: relative; overflow: hidden; background: linear-gradient(180deg, #121830, #0d1327);
-          border: 1px solid #232c47; border-radius: 15px; padding: 15px 16px 13px; margin-bottom: 12px; }
+          border: 1px solid #232c47; border-radius: 15px; padding: 15px 16px 13px; margin-bottom: 12px;
+          transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+  .card:hover { transform: translateY(-3px); border-color: #35446e; box-shadow: 0 12px 26px rgba(0,0,0,.38); }
+  .card.r1:hover { box-shadow: 0 12px 26px rgba(0,0,0,.38), 0 0 18px rgba(255,210,31,.14); }
   .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: transparent; }
   .card.r1::before { background: linear-gradient(180deg, #ffe259, #ffa751); }
   .card.r2::before { background: linear-gradient(180deg, #f4f6fb, #9aa7bd); }
@@ -362,6 +372,9 @@ const PAGE = `<!DOCTYPE html>
   .pager button { background: #0d1327; border: 1px solid #26304f; color: #aeb9d4; border-radius: 10px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
   .pager button.active { color: #ffe98a; border-color: #ffd21f; background: #1a1807; }
   .pager button:disabled { opacity: .35; cursor: default; }
+  .pager button { transition: transform .14s ease, border-color .14s ease, color .14s ease, background .14s ease; }
+  .pager button:hover:not(:disabled) { transform: translateY(-1px); border-color: #41538a; }
+  .pager button:active:not(:disabled) { transform: scale(.96); }
   .pager .info { color: #7c87a0; font-size: 12px; }
   /* Tier一覧 */
   .tierlist { max-width: 560px; margin: 30px auto 0; }
@@ -370,6 +383,33 @@ const PAGE = `<!DOCTYPE html>
              border: 1px solid #232c47; border-radius: 11px; padding: 8px 13px; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
   .tierrange { color: #8b96b0; font-size: 12.5px; white-space: nowrap; }
   footer { text-align: center; color: #525c74; font-size: 11.5px; padding: 22px 0 6px; }
+  /* アニメーション（タブ・ページ・検索・ソートが変わった時だけ .anim が付く。自動更新では再生しない） */
+  @keyframes cardIn { from { opacity: 0; transform: translateY(16px) scale(.965); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes champIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes glowPulse { 0%, 100% { opacity: .6; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.07); } }
+  .champ-imgwrap::before { animation: glowPulse 3.2s ease-in-out infinite; }
+  #content.anim .card { animation: cardIn .5s cubic-bezier(.22,.8,.3,1) both; }
+  #content.anim .card:nth-child(1) { animation-delay: 0ms; }
+  #content.anim .card:nth-child(2) { animation-delay: 45ms; }
+  #content.anim .card:nth-child(3) { animation-delay: 90ms; }
+  #content.anim .card:nth-child(4) { animation-delay: 135ms; }
+  #content.anim .card:nth-child(5) { animation-delay: 180ms; }
+  #content.anim .card:nth-child(6) { animation-delay: 225ms; }
+  #content.anim .card:nth-child(7) { animation-delay: 270ms; }
+  #content.anim .card:nth-child(8) { animation-delay: 315ms; }
+  #content.anim .card:nth-child(9) { animation-delay: 360ms; }
+  #content.anim .card:nth-child(10) { animation-delay: 405ms; }
+  #content.anim .empty { animation: champIn .4s ease both; }
+  #champion.anim .champ-badge { animation: champIn .5s ease both; }
+  #champion.anim .champ-imgwrap { animation: champIn .55s ease .06s both; }
+  #champion.anim .champ-name { animation: champIn .55s ease .12s both; }
+  #champion.anim .champ-tier { animation: champIn .55s ease .18s both; }
+  #champion.anim .champ-rating { animation: champIn .55s ease .24s both; }
+  @media (prefers-reduced-motion: reduce) {
+    #content.anim .card, #champion.anim .champ-badge, #champion.anim .champ-imgwrap,
+    #champion.anim .champ-name, #champion.anim .champ-tier, #champion.anim .champ-rating,
+    .champ-imgwrap::before { animation: none; }
+  }
   @media (max-width: 480px) {
     .pname { font-size: 11px; }
     .stat .val { font-size: 11px; }
@@ -419,6 +459,15 @@ function renderTabs() {
   fb.onclick = function() { currentKit = 'ffa'; page = 1; renderTabs(); renderKit(); };
   tabs.appendChild(fb);
 }
+var lastAnimKey = '';
+function prepAnim() {
+  var key = currentKit + '|' + page + '|' + query + '|' + sortMode;
+  var on = key !== lastAnimKey;
+  lastAnimKey = key;
+  ['content', 'champion'].forEach(function(id) {
+    document.getElementById(id).classList.toggle('anim', on);
+  });
+}
 function trendHtml(p) {
   if (!p || !p.trend) return '';
   if (p.trend === 'up') return ' <span class="arrow up" title="レート上昇">▲</span>';
@@ -439,6 +488,8 @@ function renderChampion(kit) {
     '<div class="champ-rating">' + esc(kit.label) + ' レート ' + p.rating + '</div>';
 }
 function renderKit() {
+  prepAnim();
+  document.getElementById('sortrow').style.display = (currentKit === 'ffa') ? 'none' : '';
   var kit = DATA.kits.find(function(k) { return k.key === currentKit; });
   var main = document.getElementById('content');
   if (currentKit === 'ffa') { renderFfa(main); return; }
