@@ -502,7 +502,7 @@ function renderFfa(main) {
     return '<div class="card' + (rank <= 3 ? ' r' + rank : '') + '">' +
       '<div class="card-top"><div class="rank">' + rank + '</div>' +
       '<img class="head" src="https://mc-heads.net/avatar/' + encodeURIComponent(p.name) + '/92" alt="" onerror="this.remove()">' +
-      '<div class="who"><div class="pname">' + esc(p.name) + ' <span class="arrow">→</span></div>' +
+      '<div class="who"><div class="pname">' + esc(p.name) + '</div>' +
       '<div class="ptier" style="color:#ff55ff">Crystal FFA</div></div></div>' +
       '<div class="card-stats">' +
       '<div class="stat"><div class="lab">KILLS</div><div class="val">' + p.kills + '</div></div>' +
