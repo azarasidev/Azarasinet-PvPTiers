@@ -123,7 +123,17 @@ function mergeKits(oldKits, newKits) {
         const prev = map.get(lower);
         const merged = prev ? { ...prev } : {};
         merged.name = String(p.name);
+        if (p.trend !== undefined) merged.trend = p.trend;
         if (p.rating !== undefined && p.rating !== null) merged.rating = p.rating;
+        if (isNew) {
+          // 前回スナップショットのレートと比較して矢印 (trend) を決める
+          if (prev && prev.rating !== undefined && prev.rating !== null
+              && p.rating !== undefined && p.rating !== null) {
+            merged.trend = p.rating > prev.rating ? 'up' : p.rating < prev.rating ? 'down' : 'same';
+          } else if (!prev) {
+            merged.trend = null; // 初登場は比較対象なし
+          }
+        }
         // wins/losses が新しい方で省略・null の場合は古い値を残す
         if (p.wins !== undefined && p.wins !== null) merged.wins = p.wins;
         if (p.losses !== undefined && p.losses !== null) merged.losses = p.losses;
@@ -254,6 +264,7 @@ function buildTiers() {
       byKit.get(key).players.push({
         name: String(p.name),
         rating: Math.round(rating),
+        trend: p.trend === 'up' || p.trend === 'down' || p.trend === 'same' ? p.trend : null,
         wins: p.wins === undefined || p.wins === null ? null : Number(p.wins) || 0,
         losses: p.losses === undefined || p.losses === null ? null : Number(p.losses) || 0,
         tier: tierOf(rating),
@@ -334,6 +345,13 @@ const PAGE = `<!DOCTYPE html>
   .who { min-width: 0; }
   .pname { font-family: "Press Start 2P", monospace; font-size: 13px; color: #f4f7ff; word-break: break-all; line-height: 1.5; }
   .pname .arrow { color: #5b6a8c; font-size: 12px; }
+  .pname .arrow.up { color: #4ade80; }
+  .pname .arrow.down { color: #f87171; }
+  .pname .arrow.same { color: #5b6a8c; }
+  .champ-name .arrow { font-size: 14px; }
+  .champ-name .arrow.up { color: #4ade80; }
+  .champ-name .arrow.down { color: #f87171; }
+  .champ-name .arrow.same { color: #5b6a8c; }
   .ptier { font-size: 13.5px; font-weight: 700; margin-top: 5px; }
   .card-stats { display: flex; border-top: 1px solid #1e2742; margin-top: 13px; padding-top: 11px; }
   .stat { flex: 1; text-align: center; }
@@ -401,6 +419,12 @@ function renderTabs() {
   fb.onclick = function() { currentKit = 'ffa'; page = 1; renderTabs(); renderKit(); };
   tabs.appendChild(fb);
 }
+function trendHtml(p) {
+  if (!p || !p.trend) return '';
+  if (p.trend === 'up') return ' <span class="arrow up" title="レート上昇">▲</span>';
+  if (p.trend === 'down') return ' <span class="arrow down" title="レート下降">▼</span>';
+  return ' <span class="arrow same" title="変化なし">→</span>';
+}
 function renderChampion(kit) {
   var box = document.getElementById('champion');
   if (!kit || kit.players.length === 0) { box.innerHTML = ''; return; }
@@ -410,7 +434,7 @@ function renderChampion(kit) {
     '<div class="champ-badge">#1</div>' +
     '<div class="champ-imgwrap"><img src="https://mc-heads.net/body/' + name + '/140" alt="" ' +
     'onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\\'https://mc-heads.net/avatar/' + name + '/100\\';this.style.height=\\'100px\\';}else{this.style.visibility=\\'hidden\\';}"></div>' +
-    '<div class="champ-name">' + esc(p.name) + '</div>' +
+    '<div class="champ-name">' + esc(p.name) + trendHtml(p) + '</div>' +
     '<div class="champ-tier" style="color:' + p.tier.color + '">' + esc(p.tier.label) + '</div>' +
     '<div class="champ-rating">' + esc(kit.label) + ' レート ' + p.rating + '</div>';
 }
@@ -437,7 +461,7 @@ function renderKit() {
     return '<div class="card' + (rank <= 3 ? ' r' + rank : '') + '">' +
       '<div class="card-top"><div class="rank">' + rank + '</div>' +
       '<img class="head" src="https://mc-heads.net/avatar/' + encodeURIComponent(p.name) + '/92" alt="" onerror="this.style.visibility=\\'hidden\\'">' +
-      '<div class="who"><div class="pname">' + esc(p.name) + ' <span class="arrow">→</span></div>' +
+      '<div class="who"><div class="pname">' + esc(p.name) + trendHtml(p) + '</div>' +
       '<div class="ptier" style="color:' + p.tier.color + '">' + esc(p.tier.label) + '</div></div></div>' +
       '<div class="card-stats">' +
       '<div class="stat"><div class="lab">RATING</div><div class="val">' + p.rating.toLocaleString('en-US') + '</div></div>' +
