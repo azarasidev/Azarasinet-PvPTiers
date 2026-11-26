@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AzarasiPvP Tier 一覧 | Azarasinet</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #1f2328; background: #f6f8fa;
+         font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+         font-size: 14px; line-height: 1.6; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px 40px; }
+  /* ヘッダー */
+  .site-header { background: #fff; border-bottom: 1px solid #d0d7de; }
+  .site-header .wrap { padding-top: 14px; padding-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 13px; }
+  .brand img.logo { height: 46px; width: auto; display: block; }
+  .brand h1 { margin: 0; font-size: 18px; font-weight: 700; color: #16324f; }
+  .brand .brand-sub { font-size: 11.5px; color: #57606a; letter-spacing: .08em; }
+  .header-meta { text-align: right; }
+  .header-meta .updated { font-size: 12px; color: #57606a; }
+  .badge { display: inline-block; border: 1px solid #bf8700; color: #9a6700; background: #fff8c5; font-size: 11.5px; padding: 1px 8px; margin-top: 5px; }
+  /* Tier ラベル (色は --tc で渡し、白背景でも読めるよう暗くして表示) */
+  .tierlabel { color: color-mix(in srgb, var(--tc) 52%, #1f2328); background: color-mix(in srgb, var(--tc) 13%, #fff);
+               font-weight: 700; padding: 1px 8px; white-space: nowrap; font-size: 12.5px; }
+  /* チャンピオン */
+  .champion:empty { display: none; }
+  .champ-panel { background: #fff; border: 1px solid #d0d7de; border-left: 5px solid #bf8700; margin-top: 18px; padding: 14px 18px;
+                 display: flex; align-items: center; gap: 18px; }
+  .champ-panel img.champ-body { height: 104px; flex-shrink: 0; }
+  .champ-label { font-size: 11.5px; color: #9a6700; font-weight: 700; letter-spacing: .1em; }
+  .champ-name { font-size: 19px; font-weight: 700; margin-top: 2px; word-break: break-all; }
+  .champ-name .arrow, .pname .arrow { font-size: 12px; }
+  .arrow.up { color: #1a7f37; } .arrow.down { color: #cf222e; } .arrow.same { color: #57606a; }
+  .champ-tier { margin-top: 5px; }
+  .champ-rating { color: #57606a; font-size: 12.5px; margin-top: 5px; }
+  /* キットタブ */
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+  .tab { display: inline-flex; align-items: center; gap: 7px; background: #fff; border: 1px solid #d0d7de; color: #1f2328;
+         padding: 7px 13px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; }
+  .tab img { width: 20px; height: 20px; image-rendering: pixelated; }
+  .tab:hover { border-color: #16324f; }
+  .tab.active { background: #16324f; border-color: #16324f; color: #fff; }
+  /* 検索・並び替え */
+  .search { margin-top: 14px; }
+  .search input { width: 100%; background: #fff; border: 1px solid #d0d7de; color: #1f2328; padding: 10px 13px; font-size: 14px; outline: none; font-family: inherit; }
+  .search input:focus { border-color: #16324f; }
+  .sortrow { display: flex; gap: 6px; margin-top: 10px; }
+  .sortrow button { background: #fff; border: 1px solid #d0d7de; color: #1f2328; padding: 7px 16px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .sortrow button:hover { border-color: #16324f; }
+  .sortrow button.active { background: #16324f; border-color: #16324f; color: #fff; font-weight: 600; }
+  /* プレイヤーテーブル */
+  .panel { background: #fff; border: 1px solid #d0d7de; margin-top: 14px; }
+  .table-scroll { overflow-x: auto; }
+  table.players { width: 100%; border-collapse: collapse; min-width: 600px; }
+  table.players th, table.players td { padding: 9px 14px; text-align: left; vertical-align: middle; }
+  table.players thead th { background: #f6f8fa; border-bottom: 1px solid #d0d7de; font-size: 12px; color: #57606a; font-weight: 600; white-space: nowrap; }
+  table.players tbody tr { border-bottom: 1px solid #eaeef2; }
+  table.players tbody tr:last-child { border-bottom: none; }
+  table.players tbody tr.top1 { background: #fffdf0; }
+  .rank { font-weight: 700; color: #57606a; white-space: nowrap; width: 44px; }
+  tr.top1 .rank { color: #9a6700; }
+  .who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .who img.head { width: 32px; height: 32px; image-rendering: pixelated; background: #f6f8fa; flex-shrink: 0; }
+  .pname { font-weight: 600; word-break: break-all; }
+  .num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .empty { color: #57606a; text-align: center; padding: 30px 0; font-size: 13.5px; }
+  /* ページャー */
+  .pager { display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+  .pager button { background: #fff; border: 1px solid #d0d7de; color: #1f2328; padding: 6px 13px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .pager button:hover:not(:disabled) { border-color: #16324f; }
+  .pager button.active { background: #16324f; border-color: #16324f; color: #fff; font-weight: 600; }
+  .pager button:disabled { opacity: .4; cursor: default; }
+  .pager .info { color: #57606a; font-size: 12px; }
+  /* Tier一覧 */
+  .section-title { margin: 28px 0 0; font-size: 15px; font-weight: 700; padding-bottom: 6px; border-bottom: 2px solid #16324f; }
+  .tierlist-body { background: #fff; border: 1px solid #d0d7de; border-top: none; padding: 6px 16px; }
+  .tierrow { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #eaeef2; font-size: 13.5px; }
+  .tierrow:last-child { border-bottom: none; }
+  .tierrange { color: #57606a; font-size: 12.5px; white-space: nowrap; }
+  footer { color: #57606a; font-size: 12px; padding: 22px 0 4px; line-height: 1.9; border-top: 1px solid #d0d7de; margin-top: 30px; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <div class="brand">
+      <img class="logo" src="/logo.png" alt="Azarasinet">
+      <div>
+        <h1>AzarasiPvP Tier 一覧</h1>
+        <div class="brand-sub">AZARASINET</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div class="updated" id="updated">読み込み中…</div>
+      <div id="demo"></div>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+<nav class="tabs" id="tabs"></nav>
+<section class="champion" id="champion"></section>
+<div class="search"><input id="q" type="search" placeholder="プレイヤーを検索" autocomplete="off"></div>
+<div class="sortrow" id="sortrow">
+  <button data-sort="rating" class="active">レート順</button>
+  <button data-sort="wins">勝利数順</button>
+  <button data-sort="winrate">勝率順</button>
+</div>
+<main id="content"></main>
+<div class="pager" id="pager"></div>
+<h2 class="section-title">Tier 一覧</h2>
+<section class="tierlist-body">{{TIER_LIST_HTML}}</section>
+<footer>Azarasinet — AzarasiPvP のキット別 ELO レートから自動で Tier を付けています</footer>
+</div>
+<script>
+var DATA = null, currentKit = null, query = '', sortMode = 'rating', page = 1;
+var PER_PAGE = 10;
+function esc(s) { return String(s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function winrate(p) { if (p.wins === null || p.losses === null || (p.wins + p.losses) === 0) return null; return p.wins / (p.wins + p.losses) * 100; }
+function renderTabs() {
+  var tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  DATA.kits.forEach(function(kit) {
+    var b = document.createElement('button');
+    b.className = 'tab' + (kit.key === currentKit ? ' active' : '');
+    b.innerHTML = '<img src="/icons/' + kit.key + '.png" alt="" onerror="this.remove()"><span>' + esc(kit.label) + '</span>';
+    b.onclick = function() { currentKit = kit.key; page = 1; renderTabs(); renderKit(); };
+    tabs.appendChild(b);
+  });
+  var fb = document.createElement('button');
+  fb.className = 'tab' + (currentKit === 'ffa' ? ' active' : '');
+  fb.innerHTML = '<img src="/icons/crystal.png" alt="" onerror="this.remove()"><span>FFA</span>';
+  fb.onclick = function() { currentKit = 'ffa'; page = 1; renderTabs(); renderKit(); };
+  tabs.appendChild(fb);
+}
+function trendHtml(p) {
+  if (!p || !p.trend) return '';
+  if (p.trend === 'up') return ' <span class="arrow up" title="レート上昇">▲</span>';
+  if (p.trend === 'down') return ' <span class="arrow down" title="レート下降">▼</span>';
+  return ' <span class="arrow same" title="変化なし">→</span>';
+}
+function renderChampion(kit) {
+  var box = document.getElementById('champion');
+  if (!kit || kit.players.length === 0) { box.innerHTML = ''; return; }
+  var p = kit.players[0];
+  var name = encodeURIComponent(p.name);
+  box.innerHTML =
+    '<div class="champ-panel"><img class="champ-body" src="https://mc-heads.net/body/' + name + '/140" alt="" ' +
+    'onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\'https://mc-heads.net/avatar/' + name + '/100\';}else{this.remove();}">' +
+    '<div><div class="champ-label">現在の1位 — ' + esc(kit.label) + '</div>' +
+    '<div class="champ-name">' + esc(p.name) + trendHtml(p) + '</div>' +
+    '<div class="champ-tier"><span class="tierlabel" style="--tc:' + p.tier.color + '">' + esc(p.tier.label) + '</span></div>' +
+    '<div class="champ-rating">レート ' + p.rating.toLocaleString('en-US') + '</div></div></div>';
+}
+function playerTable(cols, rowsHtml) {
+  return '<div class="panel"><div class="table-scroll"><table class="players"><thead><tr>' +
+    cols.map(function(c) { return '<th>' + c + '</th>'; }).join('') +
+    '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div></div>';
+}
+function renderKit() {
+  document.getElementById('sortrow').style.display = (currentKit === 'ffa') ? 'none' : '';
+  var kit = DATA.kits.find(function(k) { return k.key === currentKit; });
+  var main = document.getElementById('content');
+  if (currentKit === 'ffa') { renderFfa(main); return; }
+  renderChampion(kit);
+  if (!kit || kit.players.length === 0) { main.innerHTML = '<div class="empty">このキットのデータはまだありません</div>'; document.getElementById('pager').innerHTML = ''; return; }
+  var rankOf = {};
+  kit.players.forEach(function(p, i) { rankOf[p.name.toLowerCase()] = i + 1; });
+  var players = kit.players.slice();
+  if (query) players = players.filter(function(p) { return p.name.toLowerCase().indexOf(query) !== -1; });
+  if (sortMode === 'wins') players.sort(function(a, b) { return (b.wins === null ? -1 : b.wins) - (a.wins === null ? -1 : a.wins) || b.rating - a.rating; });
+  if (sortMode === 'winrate') players.sort(function(a, b) { var x = winrate(a), y = winrate(b); return (y === null ? -1 : y) - (x === null ? -1 : x) || b.rating - a.rating; });
+  if (players.length === 0) { main.innerHTML = '<div class="empty">見つかりませんでした</div>'; document.getElementById('pager').innerHTML = ''; return; }
+  var totalPages = Math.max(1, Math.ceil(players.length / PER_PAGE));
+  if (page > totalPages) page = totalPages;
+  if (page < 1) page = 1;
+  var pagePlayers = players.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  main.innerHTML = playerTable(['順位', 'プレイヤー', 'Tier', 'レート', '勝利数', '勝率'], pagePlayers.map(function(p) {
+    var rank = rankOf[p.name.toLowerCase()];
+    var wr = winrate(p);
+    return '<tr' + (rank === 1 ? ' class="top1"' : '') + '><td class="rank">' + rank + '</td>' +
+      '<td><div class="who"><img class="head" src="https://mc-heads.net/avatar/' + encodeURIComponent(p.name) + '/92" alt="" onerror="this.remove()">' +
+      '<span class="pname">' + esc(p.name) + trendHtml(p) + '</span></div></td>' +
+      '<td><span class="tierlabel" style="--tc:' + p.tier.color + '">' + esc(p.tier.label) + '</span></td>' +
+      '<td class="num">' + p.rating.toLocaleString('en-US') + '</td>' +
+      '<td class="num">' + (p.wins === null ? '—' : p.wins) + '</td>' +
+      '<td class="num">' + (wr === null ? '—' : wr.toFixed(1) + '%') + '</td></tr>';
+  }).join(''));
+  renderPager(players.length, totalPages);
+}
+var FFA = { players: [] };
+function kdText(p) { if (p.kills === 0) return '0.00'; return p.deaths === 0 ? p.kills.toFixed(2) : (p.kills / p.deaths).toFixed(2); }
+function renderFfa(main) {
+  var champ = document.getElementById('champion');
+  if (!FFA.players || FFA.players.length === 0) {
+    champ.innerHTML = '';
+    main.innerHTML = '<div class="empty">FFAのデータはまだありません（プラグインからの送信待ち）</div>';
+    document.getElementById('pager').innerHTML = '';
+    return;
+  }
+  var top = FFA.players[0];
+  champ.innerHTML =
+    '<div class="champ-panel"><img class="champ-body" src="https://mc-heads.net/body/' + encodeURIComponent(top.name) + '/140" alt="" onerror="this.remove()">' +
+    '<div><div class="champ-label">現在の1位 — FFA</div>' +
+    '<div class="champ-name">' + esc(top.name) + '</div>' +
+    '<div class="champ-tier"><span class="tierlabel" style="--tc:#ff55ff">FFA チャンピオン</span></div>' +
+    '<div class="champ-rating">Crystal FFA · ' + top.kills + ' キル</div></div></div>';
+  var rankOf = {};
+  FFA.players.forEach(function(p, i) { rankOf[p.name.toLowerCase()] = i + 1; });
+  var players = FFA.players.slice();
+  if (query) players = players.filter(function(p) { return p.name.toLowerCase().indexOf(query) !== -1; });
+  if (players.length === 0) { main.innerHTML = '<div class="empty">見つかりませんでした</div>'; document.getElementById('pager').innerHTML = ''; return; }
+  var totalPages = Math.max(1, Math.ceil(players.length / PER_PAGE));
+  if (page > totalPages) page = totalPages;
+  if (page < 1) page = 1;
+  var pagePlayers = players.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  main.innerHTML = playerTable(['順位', 'プレイヤー', 'キル', 'デス', 'K/D'], pagePlayers.map(function(p) {
+    var rank = rankOf[p.name.toLowerCase()];
+    return '<tr' + (rank === 1 ? ' class="top1"' : '') + '><td class="rank">' + rank + '</td>' +
+      '<td><div class="who"><img class="head" src="https://mc-heads.net/avatar/' + encodeURIComponent(p.name) + '/92" alt="" onerror="this.remove()">' +
+      '<span class="pname">' + esc(p.name) + '</span></div></td>' +
+      '<td class="num">' + p.kills + '</td>' +
+      '<td class="num">' + p.deaths + '</td>' +
+      '<td class="num">' + kdText(p) + '</td></tr>';
+  }).join(''));
+  renderPager(players.length, totalPages);
+}
+function renderPager(total, totalPages) {
+  var box = document.getElementById('pager');
+  if (totalPages <= 1) { box.innerHTML = total ? '<span class="info">全 ' + total + ' 人</span>' : ''; return; }
+  var h = '<button ' + (page <= 1 ? 'disabled' : '') + ' onclick="goPage(' + (page - 1) + ')">← 前へ</button>';
+  for (var i = 1; i <= totalPages; i++) {
+    h += '<button class="' + (i === page ? 'active' : '') + '" onclick="goPage(' + i + ')">' + i + '</button>';
+  }
+  h += '<button ' + (page >= totalPages ? 'disabled' : '') + ' onclick="goPage(' + (page + 1) + ')">次へ →</button>';
+  box.innerHTML = h;
+}
+function goPage(n) { page = n; renderKit(); var c = document.getElementById('content'); window.scrollTo({ top: Math.max(0, c.offsetTop - 12), behavior: 'smooth' }); }
+function load() {
+  fetch('/api/tiers').then(function(r) { return r.json(); }).then(function(d) {
+    DATA = d;
+    document.getElementById('updated').textContent = d.updatedAt
+      ? '最終更新: ' + new Date(d.updatedAt).toLocaleString('ja-JP')
+      : 'プラグインからのデータ待ち';
+    document.getElementById('demo').innerHTML = d.demo
+      ? '<span class="badge">デモデータ表示中（プラグイン未接続）</span>' : '';
+    if (!currentKit || (currentKit !== 'ffa' && !d.kits.some(function(k) { return k.key === currentKit; }))) {
+      currentKit = d.kits.length ? d.kits[0].key : null;
+    }
+    renderTabs(); renderKit();
+  }).catch(function() { document.getElementById('updated').textContent = '読み込みに失敗しました'; });
+}
+document.getElementById('q').addEventListener('input', function(e) { query = e.target.value.trim().toLowerCase(); page = 1; if (DATA) renderKit(); });
+document.getElementById('sortrow').addEventListener('click', function(e) {
+  var b = e.target.closest('button'); if (!b) return;
+  sortMode = b.dataset.sort; page = 1;
+  document.querySelectorAll('#sortrow button').forEach(function(x) { x.classList.toggle('active', x === b); });
+  if (DATA) renderKit();
+});
+function loadFfa() {
+  fetch('/api/ffa').then(function(r) { return r.json(); }).then(function(d) {
+    FFA = (d && Array.isArray(d.players)) ? d : { players: [] };
+    if (DATA) { renderTabs(); if (currentKit === 'ffa') renderKit(); }
+  }).catch(function() {});
+}
+load();
+loadFfa();
+setInterval(load, 60000);
+setInterval(loadFfa, 60000);
+</script>
+</body>
+</html>

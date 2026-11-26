@@ -33,14 +33,14 @@ function tierOf(rating) {
 
 // ---- Tier一覧（ページ下部に表示） ----
 const TIER_LIST = [
-  { html: '<span style="color:#ffaa00;font-weight:800">マスターあざらし</span>', range: '2500〜' },
-  { html: '<span style="color:#ff55ff">あざらシンメトリぃ</span> <span style="color:#ffaa00">++</span>', range: '2300〜2499' },
-  { html: '<span style="color:#ff55ff">あざらシンメトリぃ</span> <span style="color:#ffaa00">+</span>', range: '2100〜2299' },
-  { html: '<span style="color:#ff55ff">あざらシンメトリぃ</span>', range: '1900〜2099' },
-  { html: '<span style="color:#55ffff">一人前アザラシ</span>', range: '1700〜1899' },
-  { html: '<span style="color:#55ff55">半人前アザラシ</span>', range: '1500〜1699' },
-  { html: '<span style="color:#f5f5f5">普通のアザラシ</span>', range: '1300〜1499' },
-  { html: '<span style="color:#aaaaaa">駆け出しアザラシ</span>', range: '〜1299' },
+  { html: '<span class="tierlabel" style="--tc:#ffaa00">マスターあざらし</span>', range: '2500〜' },
+  { html: '<span class="tierlabel" style="--tc:#ff55ff">あざらシンメトリぃ</span> <span class="tierlabel" style="--tc:#ffaa00">++</span>', range: '2300〜2499' },
+  { html: '<span class="tierlabel" style="--tc:#ff55ff">あざらシンメトリぃ</span> <span class="tierlabel" style="--tc:#ffaa00">+</span>', range: '2100〜2299' },
+  { html: '<span class="tierlabel" style="--tc:#ff55ff">あざらシンメトリぃ</span>', range: '1900〜2099' },
+  { html: '<span class="tierlabel" style="--tc:#55ffff">一人前アザラシ</span>', range: '1700〜1899' },
+  { html: '<span class="tierlabel" style="--tc:#55ff55">半人前アザラシ</span>', range: '1500〜1699' },
+  { html: '<span class="tierlabel" style="--tc:#f5f5f5">普通のアザラシ</span>', range: '1300〜1499' },
+  { html: '<span class="tierlabel" style="--tc:#aaaaaa">駆け出しアザラシ</span>', range: '〜1299' },
 ];
 const TIER_LIST_HTML = TIER_LIST.map(t =>
   '<div class="tierrow">' + t.html + '<span class="tierrange">' + t.range + '</span></div>'
@@ -280,335 +280,9 @@ function buildTiers() {
   return { demo: data.demo, updatedAt: data.updatedAt, generatedAt: data.generatedAt, kits };
 }
 
-// ---- HTML ページ ----
-const PAGE = `<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AzarasiPvP Tier List</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-<style>
-  :root { color-scheme: dark; }
-  * { box-sizing: border-box; }
-  body { margin: 0; color: #e8eaf0; font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
-         background: radial-gradient(1100px 480px at 50% -120px, #1b2450 0%, rgba(27,36,80,0) 60%), #070a16; min-height: 100vh; }
-  .px { font-family: "Press Start 2P", monospace; }
-  .wrap { max-width: 760px; margin: 0 auto; padding: 0 14px 40px; }
-  header { padding: 30px 8px 4px; text-align: center; }
-  header h1 { margin: 0; font-size: 19px; letter-spacing: .02em; color: #f2f5ff; text-shadow: 0 0 18px rgba(90,120,255,.45); }
-  header h1 .seal { font-family: sans-serif; }
-  header p { color: #8b96b0; margin: 10px 0 0; font-size: 12px; }
-  .badge { display: inline-block; background: #7a4b12; color: #ffd9a0; border-radius: 999px; padding: 3px 12px; font-size: 12px; margin-top: 10px; }
-  /* チャンピオン (キット内1位) */
-  .champion { text-align: center; padding: 26px 0 4px; }
-  .champ-badge { display: inline-block; font-family: "Press Start 2P", monospace; font-size: 21px; color: #ffd21f;
-                 border: 2px solid rgba(255,210,31,.75); border-radius: 12px; padding: 10px 20px 8px;
-                 box-shadow: 0 0 22px rgba(255,210,31,.28), inset 0 0 14px rgba(255,210,31,.12); background: rgba(20,18,4,.35); }
-  .champ-imgwrap { position: relative; height: 208px; display: flex; align-items: flex-end; justify-content: center; margin-top: 6px; }
-  .champ-imgwrap::before { content: ""; position: absolute; left: 50%; top: 46%; width: 340px; height: 190px; transform: translate(-50%,-50%);
-                 background: radial-gradient(closest-side, rgba(255,209,63,.34), rgba(255,209,63,.08) 55%, rgba(255,209,63,0) 72%); filter: blur(2px); }
-  .champ-imgwrap img { position: relative; height: 196px; image-rendering: pixelated; filter: drop-shadow(0 10px 22px rgba(0,0,0,.55)); }
-  .champ-name { font-family: "Press Start 2P", monospace; font-size: 19px; color: #ffffff; margin-top: 12px; word-break: break-all; text-shadow: 0 2px 14px rgba(0,0,0,.6); }
-  .champ-tier { font-size: 16px; font-weight: 700; margin-top: 8px; }
-  .champ-rating { color: #8b96b0; font-size: 12px; margin-top: 5px; }
-  /* キットタブ */
-  .tabs { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; padding: 20px 0 4px; }
-  .tab { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 86px;
-         background: linear-gradient(180deg, #131a30, #0d1327); border: 1px solid #26304f; color: #c9d2e8;
-         border-radius: 13px; padding: 11px 10px 9px; cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: .12em; }
-  .tab img { width: 27px; height: 27px; image-rendering: pixelated; }
-  .tab { transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease; }
-  .tab:hover { transform: translateY(-2px); border-color: #41538a; }
-  .tab:active { transform: scale(.95); }
-  .tab.active { border-color: #ffd21f; color: #ffe98a; background: linear-gradient(180deg, #26230f, #171708); box-shadow: 0 0 14px rgba(255,210,31,.18); }
-  /* 検索・並び替え */
-  .search { margin-top: 18px; }
-  .search input { width: 100%; background: #0b1122; border: 1px solid #26304f; border-radius: 12px; color: #e8eaf0;
-                  padding: 13px 16px; font-size: 15px; outline: none; }
-  .search input { transition: border-color .18s ease, box-shadow .18s ease; }
-  .search input:focus { border-color: #41538a; box-shadow: 0 0 0 3px rgba(90,120,255,.15); }
-  .sortrow { display: flex; gap: 9px; margin-top: 11px; }
-  .sortrow button { flex: 1; background: #0d1327; border: 1px solid #26304f; color: #aeb9d4; border-radius: 11px;
-                    padding: 11px 0; font-size: 13px; cursor: pointer; }
-  .sortrow button.active { color: #ffe98a; border-color: #ffd21f; background: #1a1807; }
-  .sortrow button { transition: transform .14s ease, border-color .14s ease, color .14s ease, background .14s ease; }
-  .sortrow button:hover { transform: translateY(-1px); border-color: #41538a; }
-  .sortrow button:active { transform: scale(.97); }
-  /* プレイヤーカード */
-  .list { margin-top: 18px; }
-  .card { position: relative; overflow: hidden; background: linear-gradient(180deg, #121830, #0d1327);
-          border: 1px solid #232c47; border-radius: 15px; padding: 15px 16px 13px; margin-bottom: 12px;
-          transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-  .card:hover { transform: translateY(-3px); border-color: #35446e; box-shadow: 0 12px 26px rgba(0,0,0,.38); }
-  .card.r1:hover { box-shadow: 0 12px 26px rgba(0,0,0,.38), 0 0 18px rgba(255,210,31,.14); }
-  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: transparent; }
-  .card.r1::before { background: linear-gradient(180deg, #ffe259, #ffa751); }
-  .card.r2::before { background: linear-gradient(180deg, #f4f6fb, #9aa7bd); }
-  .card.r3::before { background: linear-gradient(180deg, #f0a35e, #c46a2d); }
-  .card-top { display: flex; align-items: center; gap: 13px; }
-  .rank { font-family: "Press Start 2P", monospace; font-size: 17px; color: #c7cede; width: 42px; text-align: center; flex-shrink: 0; }
-  .card.r1 .rank { color: #ffd21f; } .card.r2 .rank { color: #e8edf7; } .card.r3 .rank { color: #f0a35e; }
-  .card-top img.head { width: 46px; height: 46px; border-radius: 9px; image-rendering: pixelated; background: #0b1122; flex-shrink: 0; }
-  .who { min-width: 0; }
-  .pname { font-family: "Press Start 2P", monospace; font-size: 13px; color: #f4f7ff; word-break: break-all; line-height: 1.5; }
-  .pname .arrow { color: #5b6a8c; font-size: 12px; }
-  .pname .arrow.up { color: #4ade80; }
-  .pname .arrow.down { color: #f87171; }
-  .pname .arrow.same { color: #5b6a8c; }
-  .champ-name .arrow { font-size: 14px; }
-  .champ-name .arrow.up { color: #4ade80; }
-  .champ-name .arrow.down { color: #f87171; }
-  .champ-name .arrow.same { color: #5b6a8c; }
-  .ptier { font-size: 13.5px; font-weight: 700; margin-top: 5px; }
-  .card-stats { display: flex; border-top: 1px solid #1e2742; margin-top: 13px; padding-top: 11px; }
-  .stat { flex: 1; text-align: center; }
-  .stat .lab { font-size: 10.5px; color: #7c87a0; letter-spacing: .08em; }
-  .stat .val { font-family: "Press Start 2P", monospace; font-size: 13px; color: #dfe6ff; margin-top: 6px; }
-  .empty { color: #8b96b0; text-align: center; padding: 34px 0; font-size: 14px; }
-  .pager { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 16px; flex-wrap: wrap; }
-  .pager button { background: #0d1327; border: 1px solid #26304f; color: #aeb9d4; border-radius: 10px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
-  .pager button.active { color: #ffe98a; border-color: #ffd21f; background: #1a1807; }
-  .pager button:disabled { opacity: .35; cursor: default; }
-  .pager button { transition: transform .14s ease, border-color .14s ease, color .14s ease, background .14s ease; }
-  .pager button:hover:not(:disabled) { transform: translateY(-1px); border-color: #41538a; }
-  .pager button:active:not(:disabled) { transform: scale(.96); }
-  .pager .info { color: #7c87a0; font-size: 12px; }
-  /* Tier一覧 */
-  .tierlist { max-width: 560px; margin: 30px auto 0; }
-  .tierlist h3 { text-align: center; font-size: 14px; color: #c9d2e8; letter-spacing: .15em; margin: 0 0 12px; }
-  .tierrow { display: flex; justify-content: space-between; align-items: center; background: #0d1327;
-             border: 1px solid #232c47; border-radius: 11px; padding: 8px 13px; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
-  .tierrange { color: #8b96b0; font-size: 12.5px; white-space: nowrap; }
-  footer { text-align: center; color: #525c74; font-size: 11.5px; padding: 22px 0 6px; }
-  /* アニメーション（タブ・ページ・検索・ソートが変わった時だけ .anim が付く。自動更新では再生しない） */
-  @keyframes cardIn { from { opacity: 0; transform: translateY(16px) scale(.965); } to { opacity: 1; transform: translateY(0) scale(1); } }
-  @keyframes champIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes glowPulse { 0%, 100% { opacity: .6; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.07); } }
-  .champ-imgwrap::before { animation: glowPulse 3.2s ease-in-out infinite; }
-  #content.anim .card { animation: cardIn .5s cubic-bezier(.22,.8,.3,1) both; }
-  #content.anim .card:nth-child(1) { animation-delay: 0ms; }
-  #content.anim .card:nth-child(2) { animation-delay: 45ms; }
-  #content.anim .card:nth-child(3) { animation-delay: 90ms; }
-  #content.anim .card:nth-child(4) { animation-delay: 135ms; }
-  #content.anim .card:nth-child(5) { animation-delay: 180ms; }
-  #content.anim .card:nth-child(6) { animation-delay: 225ms; }
-  #content.anim .card:nth-child(7) { animation-delay: 270ms; }
-  #content.anim .card:nth-child(8) { animation-delay: 315ms; }
-  #content.anim .card:nth-child(9) { animation-delay: 360ms; }
-  #content.anim .card:nth-child(10) { animation-delay: 405ms; }
-  #content.anim .empty { animation: champIn .4s ease both; }
-  #champion.anim .champ-badge { animation: champIn .5s ease both; }
-  #champion.anim .champ-imgwrap { animation: champIn .55s ease .06s both; }
-  #champion.anim .champ-name { animation: champIn .55s ease .12s both; }
-  #champion.anim .champ-tier { animation: champIn .55s ease .18s both; }
-  #champion.anim .champ-rating { animation: champIn .55s ease .24s both; }
-  @media (prefers-reduced-motion: reduce) {
-    #content.anim .card, #champion.anim .champ-badge, #champion.anim .champ-imgwrap,
-    #champion.anim .champ-name, #champion.anim .champ-tier, #champion.anim .champ-rating,
-    .champ-imgwrap::before { animation: none; }
-  }
-  @media (max-width: 480px) {
-    .pname { font-size: 11px; }
-    .stat .val { font-size: 11px; }
-    .champ-name { font-size: 15px; }
-    header h1 { font-size: 15px; }
-  }
-</style>
-</head>
-<body>
-<div class="wrap">
-<header>
-  <h1><span class="seal">🦭</span> <span class="px">AZARASI PVP</span></h1>
-  <p id="updated">読み込み中…</p>
-  <div id="demo"></div>
-</header>
-<nav class="tabs" id="tabs"></nav>
-<section class="champion" id="champion"></section>
-<div class="search"><input id="q" type="search" placeholder="🔍 プレイヤーを検索…" autocomplete="off"></div>
-<div class="sortrow" id="sortrow">
-  <button data-sort="rating" class="active">レート順</button>
-  <button data-sort="wins">勝利数順</button>
-  <button data-sort="winrate">勝率順</button>
-</div>
-<main class="list" id="content"></main>
-<div class="pager" id="pager"></div>
-<section class="tierlist"><h3>— TIER 一覧 —</h3>${TIER_LIST_HTML}</section>
-<footer>AzarasiPvP — キットごとのELOレートから自動でTierを付けています</footer>
-</div>
-<script>
-var DATA = null, currentKit = null, query = '', sortMode = 'rating', page = 1;
-var PER_PAGE = 10;
-function esc(s) { return String(s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-function winrate(p) { if (p.wins === null || p.losses === null || (p.wins + p.losses) === 0) return null; return p.wins / (p.wins + p.losses) * 100; }
-function renderTabs() {
-  var tabs = document.getElementById('tabs');
-  tabs.innerHTML = '';
-  DATA.kits.forEach(function(kit) {
-    var b = document.createElement('button');
-    b.className = 'tab' + (kit.key === currentKit ? ' active' : '');
-    b.innerHTML = '<img src="/icons/' + kit.key + '.png" alt="" onerror="this.style.display=\\'none\\'"><span>' + esc(kit.label.toUpperCase()) + '</span>';
-    b.onclick = function() { currentKit = kit.key; page = 1; renderTabs(); renderKit(); };
-    tabs.appendChild(b);
-  });
-  var fb = document.createElement('button');
-  fb.className = 'tab' + (currentKit === 'ffa' ? ' active' : '');
-  fb.innerHTML = '<img src="/icons/crystal.png" alt="" onerror="this.remove()"><span>FFA</span>';
-  fb.onclick = function() { currentKit = 'ffa'; page = 1; renderTabs(); renderKit(); };
-  tabs.appendChild(fb);
-}
-var lastAnimKey = '';
-function prepAnim() {
-  var key = currentKit + '|' + page + '|' + query + '|' + sortMode;
-  var on = key !== lastAnimKey;
-  lastAnimKey = key;
-  ['content', 'champion'].forEach(function(id) {
-    document.getElementById(id).classList.toggle('anim', on);
-  });
-}
-function trendHtml(p) {
-  if (!p || !p.trend) return '';
-  if (p.trend === 'up') return ' <span class="arrow up" title="レート上昇">▲</span>';
-  if (p.trend === 'down') return ' <span class="arrow down" title="レート下降">▼</span>';
-  return ' <span class="arrow same" title="変化なし">→</span>';
-}
-function renderChampion(kit) {
-  var box = document.getElementById('champion');
-  if (!kit || kit.players.length === 0) { box.innerHTML = ''; return; }
-  var p = kit.players[0];
-  var name = encodeURIComponent(p.name);
-  box.innerHTML =
-    '<div class="champ-badge">#1</div>' +
-    '<div class="champ-imgwrap"><img src="https://mc-heads.net/body/' + name + '/140" alt="" ' +
-    'onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\\'https://mc-heads.net/avatar/' + name + '/100\\';this.style.height=\\'100px\\';}else{this.style.visibility=\\'hidden\\';}"></div>' +
-    '<div class="champ-name">' + esc(p.name) + trendHtml(p) + '</div>' +
-    '<div class="champ-tier" style="color:' + p.tier.color + '">' + esc(p.tier.label) + '</div>' +
-    '<div class="champ-rating">' + esc(kit.label) + ' レート ' + p.rating + '</div>';
-}
-function renderKit() {
-  prepAnim();
-  document.getElementById('sortrow').style.display = (currentKit === 'ffa') ? 'none' : '';
-  var kit = DATA.kits.find(function(k) { return k.key === currentKit; });
-  var main = document.getElementById('content');
-  if (currentKit === 'ffa') { renderFfa(main); return; }
-  renderChampion(kit);
-  if (!kit || kit.players.length === 0) { main.innerHTML = '<div class="empty">このキットのデータはまだありません</div>'; document.getElementById('pager').innerHTML = ''; return; }
-  var rankOf = {};
-  kit.players.forEach(function(p, i) { rankOf[p.name.toLowerCase()] = i + 1; });
-  var players = kit.players.slice();
-  if (query) players = players.filter(function(p) { return p.name.toLowerCase().indexOf(query) !== -1; });
-  if (sortMode === 'wins') players.sort(function(a, b) { return (b.wins === null ? -1 : b.wins) - (a.wins === null ? -1 : a.wins) || b.rating - a.rating; });
-  if (sortMode === 'winrate') players.sort(function(a, b) { var x = winrate(a), y = winrate(b); return (y === null ? -1 : y) - (x === null ? -1 : x) || b.rating - a.rating; });
-  if (players.length === 0) { main.innerHTML = '<div class="empty">見つかりませんでした</div>'; document.getElementById('pager').innerHTML = ''; return; }
-  var totalPages = Math.max(1, Math.ceil(players.length / PER_PAGE));
-  if (page > totalPages) page = totalPages;
-  if (page < 1) page = 1;
-  var pagePlayers = players.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  main.innerHTML = pagePlayers.map(function(p) {
-    var rank = rankOf[p.name.toLowerCase()];
-    var wr = winrate(p);
-    return '<div class="card' + (rank <= 3 ? ' r' + rank : '') + '">' +
-      '<div class="card-top"><div class="rank">' + rank + '</div>' +
-      '<img class="head" src="https://mc-heads.net/avatar/' + encodeURIComponent(p.name) + '/92" alt="" onerror="this.style.visibility=\\'hidden\\'">' +
-      '<div class="who"><div class="pname">' + esc(p.name) + trendHtml(p) + '</div>' +
-      '<div class="ptier" style="color:' + p.tier.color + '">' + esc(p.tier.label) + '</div></div></div>' +
-      '<div class="card-stats">' +
-      '<div class="stat"><div class="lab">RATING</div><div class="val">' + p.rating.toLocaleString('en-US') + '</div></div>' +
-      '<div class="stat"><div class="lab">WINS</div><div class="val">' + (p.wins === null ? '—' : p.wins) + '</div></div>' +
-      '<div class="stat"><div class="lab">WIN RATE</div><div class="val">' + (wr === null ? '—' : wr.toFixed(1) + '%') + '</div></div>' +
-      '</div></div>';
-  }).join('');
-  renderPager(players.length, totalPages);
-}
-var FFA = { players: [] };
-function kdText(p) { if (p.kills === 0) return '0.00'; return p.deaths === 0 ? p.kills.toFixed(2) : (p.kills / p.deaths).toFixed(2); }
-function renderFfa(main) {
-  var champ = document.getElementById('champion');
-  if (!FFA.players || FFA.players.length === 0) {
-    champ.innerHTML = '';
-    main.innerHTML = '<div class="empty">FFAのデータはまだありません（プラグインからの送信待ち）</div>';
-    document.getElementById('pager').innerHTML = '';
-    return;
-  }
-  var top = FFA.players[0];
-  champ.innerHTML =
-    '<div class="champ-badge">#1</div>' +
-    '<div class="champ-imgwrap"><img src="https://mc-heads.net/body/' + encodeURIComponent(top.name) + '/140" alt="" onerror="this.remove()"></div>' +
-    '<div class="champ-name">' + esc(top.name) + '</div>' +
-    '<div class="champ-tier" style="color:#ff55ff">FFA チャンピオン</div>' +
-    '<div class="champ-rating">Crystal FFA · ' + top.kills + ' キル</div>';
-  var rankOf = {};
-  FFA.players.forEach(function(p, i) { rankOf[p.name.toLowerCase()] = i + 1; });
-  var players = FFA.players.slice();
-  if (query) players = players.filter(function(p) { return p.name.toLowerCase().indexOf(query) !== -1; });
-  if (players.length === 0) { main.innerHTML = '<div class="empty">見つかりませんでした</div>'; document.getElementById('pager').innerHTML = ''; return; }
-  var totalPages = Math.max(1, Math.ceil(players.length / PER_PAGE));
-  if (page > totalPages) page = totalPages;
-  if (page < 1) page = 1;
-  var pagePlayers = players.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  main.innerHTML = pagePlayers.map(function(p) {
-    var rank = rankOf[p.name.toLowerCase()];
-    return '<div class="card' + (rank <= 3 ? ' r' + rank : '') + '">' +
-      '<div class="card-top"><div class="rank">' + rank + '</div>' +
-      '<img class="head" src="https://mc-heads.net/avatar/' + encodeURIComponent(p.name) + '/92" alt="" onerror="this.remove()">' +
-      '<div class="who"><div class="pname">' + esc(p.name) + '</div>' +
-      '<div class="ptier" style="color:#ff55ff">Crystal FFA</div></div></div>' +
-      '<div class="card-stats">' +
-      '<div class="stat"><div class="lab">KILLS</div><div class="val">' + p.kills + '</div></div>' +
-      '<div class="stat"><div class="lab">DEATHS</div><div class="val">' + p.deaths + '</div></div>' +
-      '<div class="stat"><div class="lab">K/D</div><div class="val">' + kdText(p) + '</div></div>' +
-      '</div></div>';
-  }).join('');
-  renderPager(players.length, totalPages);
-}
-function renderPager(total, totalPages) {
-  var box = document.getElementById('pager');
-  if (totalPages <= 1) { box.innerHTML = total ? '<span class="info">全 ' + total + ' 人</span>' : ''; return; }
-  var h = '<button ' + (page <= 1 ? 'disabled' : '') + ' onclick="goPage(' + (page - 1) + ')">← 前へ</button>';
-  for (var i = 1; i <= totalPages; i++) {
-    h += '<button class="' + (i === page ? 'active' : '') + '" onclick="goPage(' + i + ')">' + i + '</button>';
-  }
-  h += '<button ' + (page >= totalPages ? 'disabled' : '') + ' onclick="goPage(' + (page + 1) + ')">次へ →</button>';
-  box.innerHTML = h;
-}
-function goPage(n) { page = n; renderKit(); var c = document.getElementById('content'); window.scrollTo({ top: Math.max(0, c.offsetTop - 12), behavior: 'smooth' }); }
-function load() {
-  fetch('/api/tiers').then(function(r) { return r.json(); }).then(function(d) {
-    DATA = d;
-    document.getElementById('updated').textContent = d.updatedAt
-      ? '最終更新: ' + new Date(d.updatedAt).toLocaleString('ja-JP')
-      : 'プラグインからのデータ待ち';
-    document.getElementById('demo').innerHTML = d.demo
-      ? '<span class="badge">デモデータ表示中（プラグイン未接続）</span>' : '';
-    if (!currentKit || (currentKit !== 'ffa' && !d.kits.some(function(k) { return k.key === currentKit; }))) {
-      currentKit = d.kits.length ? d.kits[0].key : null;
-    }
-    renderTabs(); renderKit();
-  }).catch(function() { document.getElementById('updated').textContent = '読み込みに失敗しました'; });
-}
-document.getElementById('q').addEventListener('input', function(e) { query = e.target.value.trim().toLowerCase(); page = 1; if (DATA) renderKit(); });
-document.getElementById('sortrow').addEventListener('click', function(e) {
-  var b = e.target.closest('button'); if (!b) return;
-  sortMode = b.dataset.sort; page = 1;
-  document.querySelectorAll('#sortrow button').forEach(function(x) { x.classList.toggle('active', x === b); });
-  if (DATA) renderKit();
-});
-function loadFfa() {
-  fetch('/api/ffa').then(function(r) { return r.json(); }).then(function(d) {
-    FFA = (d && Array.isArray(d.players)) ? d : { players: [] };
-    if (DATA) { renderTabs(); if (currentKit === 'ffa') renderKit(); }
-  }).catch(function() {});
-}
-load();
-loadFfa();
-setInterval(load, 60000);
-setInterval(loadFfa, 60000);
-</script>
-</body>
-</html>
-`;
+// ---- HTML ページ (page.html を読み込み、Tier 一覧を差し込む) ----
+const PAGE = fs.readFileSync(path.join(__dirname, 'page.html'), 'utf8')
+  .replace('{{TIER_LIST_HTML}}', TIER_LIST_HTML);
 
 // ---- HTTP サーバー ----
 const server = http.createServer((req, res) => {
@@ -714,6 +388,15 @@ const server = http.createServer((req, res) => {
     const key = normalizeKitKey(path.basename(url.pathname, '.png'));
     const file = path.join(__dirname, 'public', 'icons', key + '.png');
     if (KIT_ORDER.includes(key) && fs.existsSync(file)) {
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+      return fs.createReadStream(file).pipe(res);
+    }
+    res.writeHead(404); return res.end('not found');
+  }
+
+  if (req.method === 'GET' && (url.pathname === '/favicon.png' || url.pathname === '/favicon.ico' || url.pathname === '/logo.png')) {
+    const file = path.join(__dirname, 'public', url.pathname === '/logo.png' ? 'logo.png' : 'favicon.png');
+    if (fs.existsSync(file)) {
       res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
       return fs.createReadStream(file).pipe(res);
     }
