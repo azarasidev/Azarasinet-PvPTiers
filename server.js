@@ -394,10 +394,10 @@ const server = http.createServer((req, res) => {
     res.writeHead(404); return res.end('not found');
   }
 
-  if (req.method === 'GET' && (url.pathname === '/favicon.png' || url.pathname === '/favicon.ico' || url.pathname === '/logo.png' || url.pathname === '/apple-touch-icon.png')) {
-    const file = path.join(__dirname, 'public', url.pathname === '/logo.png' ? 'logo.png' : url.pathname === '/apple-touch-icon.png' ? 'apple-touch-icon.png' : 'favicon.png');
+  if (req.method === 'GET' && (url.pathname === '/favicon.png' || url.pathname === '/favicon.ico' || url.pathname === '/logo.png' || url.pathname === '/apple-touch-icon.png' || url.pathname === '/apple-touch-icon-v2.png')) {
+    const file = path.join(__dirname, 'public', url.pathname === '/logo.png' ? 'logo.png' : url.pathname.startsWith('/apple-touch-icon') ? 'apple-touch-icon.png' : 'favicon.png');
     if (fs.existsSync(file)) {
-      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=600' });
       return fs.createReadStream(file).pipe(res);
     }
     res.writeHead(404); return res.end('not found');
